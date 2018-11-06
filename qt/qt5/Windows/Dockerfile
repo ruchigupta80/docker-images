@@ -25,3 +25,5 @@ RUN Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Ne
     # $FileData += 'Subsystem	powershell C:\Program Files\PowerShell\6.0.0-alpha.18\powershell.exe -sshs -NoLogo -NoProfile'; \
     # $FileData | Out-File $FilePath -Force; \
     Restart-Service sshd;
+
+EXPOSE 22
