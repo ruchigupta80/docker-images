@@ -24,6 +24,4 @@ RUN Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Ne
     # $FileData = (Get-Content $FilePath).Replace('#PasswordAuthentication yes','PasswordAuthentication yes'); \
     # $FileData += 'Subsystem	powershell C:\Program Files\PowerShell\6.0.0-alpha.18\powershell.exe -sshs -NoLogo -NoProfile'; \
     # $FileData | Out-File $FilePath -Force; \
-    Restart-Service sshd; \
-    # Keep this the last line
-    Restart-Computer;
+    Restart-Service sshd;
