@@ -6,4 +6,21 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) ; \
     choco install -y git --params "/GitAndUnixToolsOnPath /NoAutoCrlf"; \
     choco install -y microsoft-build-tools; \
-    choco install -y ruby winflexbison python strawberryperl;
+    choco install -y ruby winflexbison python strawberryperl; \
+    choco install -y pwsh; \
+    choco install -y openssh -params '"/SSHServerFeature /TERM:xterm-new /KeyBasedAuthenticationFeature"'; \
+    Get-ChildItem -Path 'C:\Program Files\OpenSSH\ssh_host_*_key' | % { \
+	   $acl = get-acl $_.FullName; \
+	   $ar = New-Object  System.Security.AccessControl.FileSystemAccessRule("NT Service\sshd", "Read", "Allow"); \
+	   $acl.SetAccessRule($ar); \
+	   Set-Acl $_.FullName $acl; \
+	}; \
+    New-NetFirewallRule -Protocol TCP -LocalPort 22 -Direction Inbound -Action Allow -DisplayName SSH; \
+    Set-Service SSHD -StartupType Automatic; \
+    Set-Service SSH-Agent -StartupType Automatic; \
+    $FilePath = "C:\Program Files\OpenSSH-Win64\sshd_config"; \
+    $FileData = (Get-Content $FilePath).Replace('#PasswordAuthentication yes','PasswordAuthentication yes'); \
+    $FileData += 'Subsystem	powershell C:\Program Files\PowerShell\6.0.0-alpha.18\powershell.exe -sshs -NoLogo -NoProfile'; \
+    $FileData | Out-File $FilePath -Force; \
+    Restart-Service sshd; \
+    Restart-Computer;
