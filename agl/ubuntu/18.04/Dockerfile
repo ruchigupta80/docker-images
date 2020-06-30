@@ -58,12 +58,21 @@ RUN sudo locale-gen en_US.UTF-8 \
  && git config --global user.name Crave \
  && git config --global user.email aosp@crave.io \
  && git config --global color.ui false
+RUN wget https://downloads.yoctoproject.org/releases/yocto/yocto-3.1/buildtools/x86_64-buildtools-extended-nativesdk-standalone-3.1.sh && \
+    echo "4fd00aee6a1e8d85920db8309ea10acb29cbfe9f411a4b127597aabf2013afd4  x86_64-buildtools-extended-nativesdk-standalone-3.1.sh" > SHA256SUMS && \
+    sha256sum -c SHA256SUMS && \
+    rm SHA256SUMS
+
+RUN chmod 755 x86_64-buildtools-extended-nativesdk-standalone-3.1.sh && \
+    /bin/bash -c "./x86_64-buildtools-extended-nativesdk-standalone-3.1.sh -y" && \
+    rm x86_64-buildtools-extended-nativesdk-standalone-3.1.sh
+
 USER root
 ADD https://raw.githubusercontent.com/crops/extsdk-container/master/restrict_useradd.sh  \
         https://raw.githubusercontent.com/crops/extsdk-container/master/restrict_groupadd.sh \
         https://raw.githubusercontent.com/crops/extsdk-container/master/usersetup.py \
         /usr/bin/
-COPY poky-entry.py poky-launch.sh /usr/bin/
+COPY distro-entry.sh poky-entry.py poky-launch.sh /usr/bin/
 COPY sudoers.admin /etc/
 RUN cp -af /etc/skel/ /etc/vncskel/ && \
     echo "export DISPLAY=1" >>/etc/vncskel/.bashrc && \
@@ -71,17 +80,19 @@ RUN cp -af /etc/skel/ /etc/vncskel/ && \
     echo "" | vncpasswd -f > /etc/vncskel/.vnc/passwd && \
     chmod 0600 /etc/vncskel/.vnc/passwd
 RUN userdel -r admin && \
-    groupadd -g 70 admin && \
-    useradd -N -m -u 70 -g 70 admin && \
+    # groupdel admin && \
+   groupadd -g 1000 admin && \
+    useradd -N -m -u 1000 -g 1000 admin && \
     chmod 755 /usr/bin/usersetup.py \
         /usr/bin/poky-entry.py \
         /usr/bin/poky-launch.sh \
+        /usr/bin/distro-entry.sh \
         /usr/bin/restrict_groupadd.sh \
         /usr/bin/restrict_useradd.sh && \
     echo "#include /etc/sudoers.admin" >> /etc/sudoers
 
 USER admin
-
+ENV HOME=/home/admin USER=admin TERM=xterm LANG=en_US.UTF-8
+WORKDIR /home/admin
 CMD /bin/bash
-ENV LANG=en_US.UTF-8
-ENTRYPOINT ["/usr/bin/dumb-init", "--", "/usr/bin/poky-entry.py"]
+ENTRYPOINT ["/usr/bin/distro-entry.sh", "/usr/bin/dumb-init", "--", "/usr/bin/poky-entry.py"]
